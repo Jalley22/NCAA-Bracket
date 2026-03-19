@@ -284,7 +284,7 @@ function safeAttr(s) {
 var POINTS = [10, 20, 40, 80, 160, 320];
 
 function calcScore() {
-  var correct = 0, total = 0;
+  var correct = 0, total = 0, points = 0;
   var regs = ['e','s','w','m'];
   for (var ri = 0; ri < regs.length; ri++) {
     var reg = regs[ri];
@@ -296,24 +296,24 @@ function calcScore() {
         if (!res) continue;
         total++;
         var pick = picks[gameId];
-        if (pick && pick.n === res.n) correct++;
+        if (pick && pick.n === res.n) { correct++; points += POINTS[rd]; }
       }
     }
   }
-  // FF
+  // FF (round index 4)
   ['ff0','ff1'].forEach(function(ffId) {
     var res = results[ffId]; if (!res) return;
     total++;
-    var pick = picks[ffId]; if (pick && pick.n === res.n) correct++;
+    var pick = picks[ffId]; if (pick && pick.n === res.n) { correct++; points += POINTS[4]; }
   });
-  // Champ
+  // Champ (round index 5)
   var cRes = results['ch'];
   if (cRes) {
     total++;
     var cPick = picks['ch'];
-    if (cPick && cPick.n === cRes.n) correct++;
+    if (cPick && cPick.n === cRes.n) { correct++; points += POINTS[5]; }
   }
-  return { correct: correct, total: total };
+  return { correct: correct, total: total, points: points };
 }
 
 // ── Pick handlers ─────────────────────────────────────────
@@ -678,7 +678,7 @@ function render() {
   var score = calcScore();
   if (score.total > 0) {
     sc.style.display = 'block';
-    sc.innerHTML = score.correct + ' / ' + score.total + ' correct';
+    sc.innerHTML = score.points + ' PTS &nbsp;|&nbsp; ' + score.correct + '/' + score.total + ' correct';
   } else {
     sc.style.display = 'none';
   }
