@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 March Madness Bracket</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #080b10;
+  --surface: #12181f;
+  --border: #253040;
+  --text: #ccd6e0;
+  --muted: #50647a;
+  --accent: #f5a623;
+  --green: #22c55e;
+  --line: rgba(60, 110, 170, 0.5);
+  --slot-h: 74px;
+  --game-w: 150px;
+  --round-w: 174px;
+  --conn: 24px;
+  --east-c: #4a9adb;
+  --south-c: #e05555;
+  --west-c: #46b86a;
+  --midwest-c: #e08c30;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; overflow-x: auto; }
+header {
+  background: linear-gradient(180deg,#120e00 0%,var(--bg) 100%);
+  border-bottom: 2px solid #2a1e00; padding: 16px 24px 12px;
+  position: sticky; top: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: space-between; min-width: 1580px;
+}
+.header-title h1 {
+  font-family: 'Bebas Neue'; font-size: 2.4rem; letter-spacing: .14em;
+  background: linear-gradient(90deg,#c87d10,#ffd060,#f5a623);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.header-title p { font-size: .7rem; color: var(--muted); letter-spacing: .22em; text-transform: uppercase; margin-top: 2px; }
+.header-controls { display: flex; align-items: center; gap: 16px; }
+.live-badge {
+  background: rgba(220,40,40,.15); border: 1px solid #e04040; color: #ff5555;
+  font-size: .65rem; font-weight: 700; letter-spacing: .12em; padding: 2px 8px; border-radius: 3px;
+  display: flex; align-items: center; gap: 4px;
+}
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: #ff5555; animation: blink 1.2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+.champ-badge { font-family: 'Bebas Neue'; font-size: 1.05rem; letter-spacing: .1em; color: var(--accent); }
+.btn-reset {
+  background: rgba(245,166,35,.12); border: 1px solid var(--accent); color: var(--accent);
+  font-family: 'Bebas Neue'; font-size: 1rem; letter-spacing: .1em; padding: 5px 18px;
+  cursor: pointer; border-radius: 3px; transition: background .18s;
+}
+.btn-reset:hover { background: rgba(245,166,35,.28); }
+.bracket-wrap { padding: 20px; min-width: 1580px; }
+.bracket { display: flex; flex-direction: row; align-items: flex-start; }
+.half { display: flex; flex-direction: column; gap: 28px; }
+.region { display: flex; flex-direction: column; }
+.region-label {
+  font-family: 'Bebas Neue'; font-size: .95rem; letter-spacing: .2em;
+  text-align: center; padding: 3px 0 5px; border-bottom: 1px solid var(--border);
+}
+.rounds { display: flex; flex-direction: row; height: calc(8 * var(--slot-h)); }
+.right-half .rounds { flex-direction: row-reverse; }
+.round { display: flex; flex-direction: column; width: var(--round-w); position: relative; }
+.round-label {
+  font-size: .58rem; text-transform: uppercase; letter-spacing: .18em;
+  color: var(--muted); text-align: center; padding: 0 0 4px; flex-shrink: 0;
+}
+.gw { flex: 1; display: flex; align-items: center; position: relative; padding: 2px 0; }
+.left-half .gw::before {
+  content: ''; position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  width: var(--conn); height: 1px; background: var(--line);
+}
+.right-half .gw::before {
+  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: var(--conn); height: 1px; background: var(--line);
+}
+.conn { position: absolute; width: var(--conn); }
+.left-half .gw .conn { right: 0; }
+.right-half .gw .conn { left: 0; }
+.left-half .gw .conn.top    { top: 0;   height: 50%; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.left-half .gw .conn.bottom { top: 50%; height: 50%; border-right: 1px solid var(--line); border-top: 1px solid var(--line); }
+.right-half .gw .conn.top    { top: 0;   height: 50%; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.right-half .gw .conn.bottom { top: 50%; height: 50%; border-left: 1px solid var(--line); border-top: 1px solid var(--line); }
+.game {
+  width: var(--game-w); border: 1px solid var(--border); border-radius: 4px;
+  overflow: hidden; background: var(--surface); flex-shrink: 0;
+}
+.team {
+  display: flex; align-items: center; gap: 5px; width: 100%; padding: 5px 8px;
+  cursor: pointer; border: none; background: transparent; color: var(--text);
+  font-family: 'Barlow'; font-size: .73rem; font-weight: 600; text-align: left;
+  transition: background .14s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  min-height: 24px;
+}
+.team:hover:not([disabled]) { background: rgba(255,255,255,.07); }
+.team .sd { font-size: .62rem; color: var(--muted); min-width: 14px; font-weight: 700; flex-shrink: 0; }
+.team.won { background: rgba(34,197,94,.14); color: var(--green); }
+.team.won .sd { color: rgba(34,197,94,.6); }
+.team.out { background: rgba(255,255,255,.04); color: var(--muted); }
+.team.out .nm { text-decoration: line-through; }
+.team.tbd { color: var(--muted); cursor: default; font-weight: 400; font-style: italic; }
+.team.live-now { background: rgba(220,40,40,.08); }
+.divline { height: 1px; background: var(--border); }
+.center {
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  width: 230px; height: calc(2 * 8 * var(--slot-h) + 28px); padding: 0 8px;
+  border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+}
+.center-inner { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
+.ff-title  { font-family: 'Bebas Neue'; font-size: .85rem; letter-spacing: .22em; color: var(--muted); text-align: center; }
+.champ-title { font-family: 'Bebas Neue'; font-size: .95rem; letter-spacing: .2em; color: var(--accent); text-align: center; }
+.ff-matchup { font-size: .58rem; color: var(--muted); text-align: center; margin-bottom: 3px; letter-spacing: .08em; text-transform: uppercase; }
+.champ-winner {
+  text-align: center; padding: 12px 8px; width: 100%;
+  border: 1px solid rgba(245,166,35,.4); border-radius: 6px; background: rgba(245,166,35,.05);
+}
+.champ-winner .trophy { font-size: 1.8rem; display: block; margin-bottom: 4px; }
+.champ-winner .cname { font-family: 'Bebas Neue'; font-size: 1.3rem; letter-spacing: .1em; color: var(--accent); }
+.champ-winner .csub { font-size: .6rem; color: var(--muted); letter-spacing: .15em; text-transform: uppercase; }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-title">
+    <h1>2026 MARCH MADNESS</h1>
+    <p>NCAA Division I Men's Basketball Tournament &mdash; Your Personal Bracket</p>
+  </div>
+  <div class="header-controls">
+    <div class="live-badge"><span class="live-dot"></span> GAMES IN PROGRESS</div>
+    <div class="champ-badge" id="header-champ"></div>
+    <button class="btn-reset" onclick="resetAll()">&#8635; RESET</button>
+  </div>
+</header>
+
+
+
+<div class="bracket-wrap">
+  <div class="bracket" id="bracket"></div>
+</div>
+
+<script>
+var STORAGE_KEY = 'mm2026_picks';
+
+var LIVE_IDS = { 'e_0_1': 1, 'e_0_4': 1, 's_0_3': 1, 'w_0_1': 1 };
+
+var ROUND_NAMES = ['First Round', 'Second Round', 'Sweet 16', 'Elite Eight'];
+
+var RD = {
+  e: {
+    name: 'EAST', color: 'var(--east-c)',
+    r64: [
+      [{s:1,n:'Duke'},{s:16,n:'Siena'}],
+      [{s:8,n:'Ohio State'},{s:9,n:'TCU'}],
+      [{s:5,n:"St. John's"},{s:12,n:'N. Iowa'}],
+      [{s:4,n:'Kansas'},{s:13,n:'Cal Baptist'}],
+      [{s:6,n:'Louisville'},{s:11,n:'S. Florida'}],
+      [{s:3,n:'Mich. State'},{s:14,n:'N. Dakota St.'}],
+      [{s:7,n:'UCLA'},{s:10,n:'UCF'}],
+      [{s:2,n:'UConn'},{s:15,n:'Furman'}]
+    ]
+  },
+  s: {
+    name: 'SOUTH', color: 'var(--south-c)',
+    r64: [
+      [{s:1,n:'Florida'},{s:16,n:'Prairie View'}],
+      [{s:8,n:'Clemson'},{s:9,n:'Iowa'}],
+      [{s:5,n:'Vanderbilt'},{s:12,n:'McNeese'}],
+      [{s:4,n:'Nebraska'},{s:13,n:'Troy'}],
+      [{s:6,n:'N. Carolina'},{s:11,n:'VCU'}],
+      [{s:3,n:'Illinois'},{s:14,n:'Penn'}],
+      [{s:7,n:"Saint Mary's"},{s:10,n:'Texas A&M'}],
+      [{s:2,n:'Houston'},{s:15,n:'Idaho'}]
+    ]
+  },
+  w: {
+    name: 'WEST', color: 'var(--west-c)',
+    r64: [
+      [{s:1,n:'Arizona'},{s:16,n:'LIU'}],
+      [{s:8,n:'Wisconsin'},{s:9,n:'High Point'}],
+      [{s:5,n:'Villanova'},{s:12,n:'Utah State'}],
+      [{s:4,n:'Arkansas'},{s:13,n:"Hawai'i"}],
+      [{s:6,n:'Miami (FL)'},{s:11,n:'Missouri'}],
+      [{s:3,n:'Gonzaga'},{s:14,n:'Kennesaw St.'}],
+      [{s:7,n:'BYU'},{s:10,n:'Texas'}],
+      [{s:2,n:'Purdue'},{s:15,n:'Queens'}]
+    ]
+  },
+  m: {
+    name: 'MIDWEST', color: 'var(--midwest-c)',
+    r64: [
+      [{s:1,n:'Michigan'},{s:16,n:'Howard'}],
+      [{s:8,n:'Georgia'},{s:9,n:'Saint Louis'}],
+      [{s:5,n:'Alabama'},{s:12,n:'Hofstra'}],
+      [{s:4,n:'Texas Tech'},{s:13,n:'Akron'}],
+      [{s:6,n:'Tennessee'},{s:11,n:'Miami (OH)'}],
+      [{s:3,n:'Virginia'},{s:14,n:'Wright State'}],
+      [{s:7,n:'Kentucky'},{s:10,n:'Santa Clara'}],
+      [{s:2,n:'Iowa State'},{s:15,n:'Tenn. State'}]
+    ]
+  }
+};
+
+// ── Persistence ───────────────────────────────────────────
+var picks = {};
+try {
+  var _stored = localStorage.getItem(STORAGE_KEY);
+  if (_stored) { picks = JSON.parse(_stored); }
+} catch (_e) {}
+
+function savePicks() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(picks)); } catch (_e) {}
+}
+
+// ── Helpers ───────────────────────────────────────────────
+function gid(reg, rd, g) {
+  return reg + '_' + rd + '_' + g;
+}
+
+function getTeams(reg, rd, g) {
+  if (rd === 0) { return RD[reg].r64[g]; }
+  var t0 = picks[gid(reg, rd - 1, g * 2)] || null;
+  var t1 = picks[gid(reg, rd - 1, g * 2 + 1)] || null;
+  return [t0, t1];
+}
+
+function e8Winner(reg) { return picks[gid(reg, 3, 0)] || null; }
+
+function safeAttr(s) {
+  return String(s)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, '\\x27')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Pick handlers ─────────────────────────────────────────
+window.pickTeam = function (gameId, name, seed) {
+  var cur = picks[gameId];
+  if (cur && cur.n === name) {
+    delete picks[gameId];
+    cascadeRemove(gameId, name);
+  } else {
+    picks[gameId] = { s: seed, n: name };
+    cascadeInvalidate(gameId);
+  }
+  savePicks();
+  render();
+};
+
+window.pickFF = function (ffId, name, seed) {
+  var cur = picks[ffId];
+  if (cur && cur.n === name) {
+    delete picks[ffId];
+    if (picks['ch'] && picks['ch'].n === name) { delete picks['ch']; }
+  } else {
+    picks[ffId] = { s: seed, n: name };
+    if (picks['ch']) {
+      var pf0 = picks['ff0'];
+      var pf1 = picks['ff1'];
+      var chN = picks['ch'].n;
+      if (!pf0 || !pf1 || (chN !== pf0.n && chN !== pf1.n)) {
+        delete picks['ch'];
+      }
+    }
+  }
+  savePicks();
+  render();
+};
+
+window.pickChamp = function (name, seed) {
+  if (picks['ch'] && picks['ch'].n === name) {
+    delete picks['ch'];
+  } else {
+    picks['ch'] = { s: seed, n: name };
+  }
+  savePicks();
+  render();
+};
+
+window.resetAll = function () {
+  picks = {};
+  savePicks();
+  render();
+};
+
+function cascadeRemove(gameId, name) {
+  var parts = gameId.split('_');
+  var reg = parts[0];
+  var rd = parseInt(parts[1], 10);
+  var gi = parseInt(parts[2], 10);
+  for (var r = rd + 1; r <= 3; r++) {
+    var ni = Math.floor(gi / Math.pow(2, r - rd));
+    var ng = gid(reg, r, ni);
+    if (picks[ng] && picks[ng].n === name) { delete picks[ng]; }
+  }
+  if (picks['ff0'] && picks['ff0'].n === name) { delete picks['ff0']; }
+  if (picks['ff1'] && picks['ff1'].n === name) { delete picks['ff1']; }
+  if (picks['ch'] && picks['ch'].n === name) { delete picks['ch']; }
+}
+
+function cascadeInvalidate(gameId) {
+  var parts = gameId.split('_');
+  var reg = parts[0];
+  var rd = parseInt(parts[1], 10);
+  var gi = parseInt(parts[2], 10);
+  for (var r = rd + 1; r <= 3; r++) {
+    var ni = Math.floor(gi / Math.pow(2, r - rd));
+    var ng = gid(reg, r, ni);
+    if (picks[ng]) {
+      var ts = getTeams(reg, r, ni);
+      var v0 = ts[0] && ts[0].n === picks[ng].n;
+      var v1 = ts[1] && ts[1].n === picks[ng].n;
+      if (!v0 && !v1) {
+        var cleared = picks[ng].n;
+        delete picks[ng];
+        if (picks['ff0'] && picks['ff0'].n === cleared) { delete picks['ff0']; }
+        if (picks['ff1'] && picks['ff1'].n === cleared) { delete picks['ff1']; }
+        if (picks['ch'] && picks['ch'].n === cleared) { delete picks['ch']; }
+      }
+    }
+  }
+}
+
+// ── HTML builders ─────────────────────────────────────────
+function makeTeamBtn(t, gameId, cb) {
+  if (!t) {
+    return '<button class="team tbd" disabled><span class="sd">-</span><span class="nm">TBD</span></button>';
+  }
+  var pick = picks[gameId];
+  var cls = 'team';
+  if (LIVE_IDS[gameId]) { cls += ' live-now'; }
+  if (pick) { cls += (pick.n === t.n ? ' won' : ' out'); }
+  return '<button class="' + cls + '" onclick="' + cb + '">'
+    + '<span class="sd">' + t.s + '</span>'
+    + '<span class="nm">' + t.n + '</span>'
+    + '</button>';
+}
+
+function makeGame(gameId, t0, t1) {
+  var n0 = t0 ? safeAttr(t0.n) : '';
+  var s0 = t0 ? t0.s : 0;
+  var n1 = t1 ? safeAttr(t1.n) : '';
+  var s1 = t1 ? t1.s : 0;
+  var cb0 = "pickTeam('" + gameId + "','" + n0 + "'," + s0 + ")";
+  var cb1 = "pickTeam('" + gameId + "','" + n1 + "'," + s1 + ")";
+  return '<div class="game">'
+    + makeTeamBtn(t0, gameId, cb0)
+    + '<div class="divline"></div>'
+    + makeTeamBtn(t1, gameId, cb1)
+    + '</div>';
+}
+
+function makeFFBtn(ffId, t) {
+  if (!t) {
+    return '<button class="team tbd" disabled><span class="sd">-</span><span class="nm">TBD</span></button>';
+  }
+  var pick = picks[ffId];
+  var cls = 'team' + (pick ? (pick.n === t.n ? ' won' : ' out') : '');
+  var cb = "pickFF('" + ffId + "','" + safeAttr(t.n) + "'," + (t.s || 0) + ")";
+  return '<button class="' + cls + '" onclick="' + cb + '">'
+    + '<span class="sd">' + (t.s || '') + '</span>'
+    + '<span class="nm">' + t.n + '</span>'
+    + '</button>';
+}
+
+function makeChampBtn(t) {
+  if (!t) {
+    return '<button class="team tbd" disabled><span class="sd">-</span><span class="nm">TBD</span></button>';
+  }
+  var pick = picks['ch'];
+  var cls = 'team' + (pick ? (pick.n === t.n ? ' won' : ' out') : '');
+  var cb = "pickChamp('" + safeAttr(t.n) + "'," + (t.s || 0) + ")";
+  return '<button class="' + cls + '" onclick="' + cb + '">'
+    + '<span class="sd">' + (t.s || '') + '</span>'
+    + '<span class="nm">' + t.n + '</span>'
+    + '</button>';
+}
+
+function renderRegion(reg, reversed) {
+  var data = RD[reg];
+  var order = [0, 1, 2, 3];
+  var roundsHtml = '';
+
+  for (var ri = 0; ri < order.length; ri++) {
+    var r = order[ri];
+    var numGames = Math.pow(2, 3 - r);
+    var flex = Math.pow(2, r);
+    var gamesHtml = '';
+
+    for (var g = 0; g < numGames; g++) {
+      var gameId = gid(reg, r, g);
+      var ts = getTeams(reg, r, g);
+      var card = makeGame(gameId, ts[0], ts[1]);
+      var connCls = '';
+      if (r < 3) {
+        connCls = g % 2 === 0 ? 'bottom' : 'top';
+      }
+      var conn = connCls ? '<span class="conn ' + connCls + '"></span>' : '';
+      gamesHtml += '<div class="gw" style="flex:' + flex + '">' + card + conn + '</div>';
+    }
+
+    roundsHtml += '<div class="round">'
+      + '<div class="round-label">' + ROUND_NAMES[r] + '</div>'
+      + gamesHtml
+      + '</div>';
+  }
+
+  return '<div class="region">'
+    + '<div class="region-label" style="color:' + data.color + '">' + data.name + '</div>'
+    + '<div class="rounds">' + roundsHtml + '</div>'
+    + '</div>';
+}
+
+function renderCenter() {
+  var f0a = e8Winner('e');
+  var f0b = e8Winner('s');
+  var f1a = e8Winner('w');
+  var f1b = e8Winner('m');
+  var ca = picks['ff0'] || null;
+  var cb = picks['ff1'] || null;
+  var ch = picks['ch'];
+
+  var winnerBox = '';
+  if (ch) {
+    winnerBox = '<div class="champ-winner">'
+      + '<span class="trophy">&#127942;</span>'
+      + '<div class="cname">' + ch.n + '</div>'
+      + '<div class="csub">2026 Champion</div>'
+      + '</div>';
+  }
+
+  return '<div class="center"><div class="center-inner">'
+    + '<div class="ff-title">FINAL FOUR</div>'
+    + '<div style="width:100%">'
+      + '<div class="ff-matchup">East &middot; South</div>'
+      + '<div class="game">' + makeFFBtn('ff0', f0a) + '<div class="divline"></div>' + makeFFBtn('ff0', f0b) + '</div>'
+    + '</div>'
+    + '<div style="width:100%">'
+      + '<div class="ff-matchup">West &middot; Midwest</div>'
+      + '<div class="game">' + makeFFBtn('ff1', f1a) + '<div class="divline"></div>' + makeFFBtn('ff1', f1b) + '</div>'
+    + '</div>'
+    + '<div class="champ-title">&#127942; CHAMPIONSHIP</div>'
+    + '<div class="game">' + makeChampBtn(ca) + '<div class="divline"></div>' + makeChampBtn(cb) + '</div>'
+    + winnerBox
+    + '</div></div>';
+}
+
+function render() {
+  document.getElementById('bracket').innerHTML =
+    '<div class="half left-half">'
+      + renderRegion('e', false)
+      + renderRegion('s', false)
+    + '</div>'
+    + renderCenter()
+    + '<div class="half right-half">'
+      + renderRegion('w', true)
+      + renderRegion('m', true)
+    + '</div>';
+
+  var hc = document.getElementById('header-champ');
+  hc.innerHTML = picks['ch'] ? '&#127942; ' + picks['ch'].n : '';
+}
+
+render();
+</script>
+</body>
+</html>
